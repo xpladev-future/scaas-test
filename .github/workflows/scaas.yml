@@ -82,7 +82,7 @@ jobs:
         with:
           node-version: 16.14.2
       - name: store tx broadcasting
-        working-directory: ts-test
+        working-directory: scripts
         run: |
           npm ci
           npm run store -- ${{ needs.validate-project-structure-job.outputs.project_name }} ${{vars.RECORD_CONTRACT_ADDRESS}} "${{secrets.TEST_MNEMONIC}}"
@@ -97,7 +97,7 @@ jobs:
         with:
           node-version: 16.14.2
       - name: query code
-        working-directory: ts-test
+        working-directory: scripts
         run: |
           npm ci
           npm run query -- ${{ needs.validate-project-structure-job.outputs.project_name }} ${{vars.RECORD_CONTRACT_ADDRESS}}

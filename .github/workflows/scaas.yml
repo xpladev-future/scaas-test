@@ -77,7 +77,7 @@ jobs:
       - uses: actions/download-artifact@v3
         with:
           name: ${{ needs.validate-project-structure-job.outputs.project_name }}
-          path: ts-test
+          path: scripts
       - uses: actions/setup-node@v3
         with:
           node-version: 16.14.2

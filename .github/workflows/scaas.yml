@@ -1,12 +1,17 @@
 name: Cosmwasm contract auto compile & deploy workflow
 
+# on:
+#   workflow_dispatch:
+#   pull_request:
+#     types: [ opened, synchronize ]
+
 on:
-  workflow_dispatch:
-  pull_request:
-    types: [ opened, synchronize ]
+  pull_request_review:
+    types: [submitted]
 
 jobs:
   validate-project-structure-job:
+    if: github.event.review.state == 'APPROVED'
     name: Validate project structure
     runs-on: ubuntu-latest
     # Map a step output to a job output

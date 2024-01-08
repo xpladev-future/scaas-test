@@ -77,15 +77,15 @@ jobs:
       - uses: actions/download-artifact@v3
         with:
           name: ${{ needs.validate-project-structure-job.outputs.project_name }}
-          path: ts-test
+          path: scripts
       - uses: actions/setup-node@v3
         with:
           node-version: 16.14.2
       - name: store tx broadcasting
-        working-directory: ts-test
+        working-directory: scripts
         run: |
           npm ci
-          npm run store -- ${{ needs.validate-project-structure-job.outputs.project_name }} ${{vars.RECORD_CONTRACT_ADDRESS}} "${{secrets.TEST_MNEMONIC}}"
+          npm run store -- ${{ needs.validate-project-structure-job.outputs.project_name }} "${{vars.RECORD_CONTRACT_ADDRESS}}" "${{secrets.TEST_MNEMONIC}}"
 
   query-code-id-job:
     name: Query stored code id
@@ -97,7 +97,7 @@ jobs:
         with:
           node-version: 16.14.2
       - name: query code
-        working-directory: ts-test
+        working-directory: scripts
         run: |
           npm ci
-          npm run query -- ${{ needs.validate-project-structure-job.outputs.project_name }} ${{vars.RECORD_CONTRACT_ADDRESS}}
+          npm run query -- ${{ needs.validate-project-structure-job.outputs.project_name }} "${{vars.RECORD_CONTRACT_ADDRESS}}"

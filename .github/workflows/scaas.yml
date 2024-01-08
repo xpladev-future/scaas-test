@@ -85,7 +85,7 @@ jobs:
         working-directory: scripts
         run: |
           npm ci
-          npm run store -- ${{ needs.validate-project-structure-job.outputs.project_name }} ${{vars.RECORD_CONTRACT_ADDRESS}} "${{secrets.TEST_MNEMONIC}}"
+          npm run store -- ${{ needs.validate-project-structure-job.outputs.project_name }} "${{vars.RECORD_CONTRACT_ADDRESS}}" "${{secrets.TEST_MNEMONIC}}"
 
   query-code-id-job:
     name: Query stored code id
@@ -100,4 +100,4 @@ jobs:
         working-directory: scripts
         run: |
           npm ci
-          npm run query -- ${{ needs.validate-project-structure-job.outputs.project_name }} ${{vars.RECORD_CONTRACT_ADDRESS}}
+          npm run query -- ${{ needs.validate-project-structure-job.outputs.project_name }} "${{vars.RECORD_CONTRACT_ADDRESS}}"

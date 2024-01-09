@@ -3,7 +3,6 @@ import * as fs from 'fs'
 import * as path from 'path'
 import * as core from '@actions/core';
 
-// github evn로 처리
 const cube = new LCDClient({
     chainID: 'cube_47-5',
     URL: 'https://cube-lcd.xpla.dev',
@@ -66,6 +65,8 @@ const store = async () => {
     const recordTxResult = await cube.tx.broadcast(tx);
 
     console.log(recordTxResult);
+
+    core.saveState('code_id', code_id[0]);
 
     const storeHash = storeTxResult.txhash
     const recordHash = recordTxResult.txhash

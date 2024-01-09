@@ -1,6 +1,6 @@
 import { LCDClient } from "@xpla/xpla.js";
+import * as core from '@actions/core';
 
-// github evn로 처리
 const cube = new LCDClient({
     chainID: 'cube_47-5',
     URL: 'https://cube-lcd.xpla.dev',
@@ -19,8 +19,14 @@ const query = async () => {
         }
     );
 
+    var code_id = core.getState("code_id");
+    if (code_id != result["cosmwasm_info"].code_id) {
+        core.setFailed(`Code Id mismatch!`);
+    }
+
     console.log("project name : " + projectName)
     console.log("code id:  " + result["cosmwasm_info"].code_id)
+    
 }
 
 query()

@@ -72,13 +72,13 @@ const store = async () => {
 
     await core.summary
         .addHeading('Results')
-        .addRaw('Project Name: ' + projectName, true)
-        .addRaw('Code Id: ' + code_id[0], true)
-        .addRaw('Signer Address: ' + cube_wallet.key.accAddress , true)
-        .addRaw('Store Tx hash: ' + storeHash, true)
-        .addLink('Explore storing transaction!', 'https://explorer.xpla.io/testnet/' + storeHash)
-        .addRaw('Record Tx hash: ' + recordHash, true)
-        .addLink('Explore recording transaction!', 'https://explorer.xpla.io/testnet/' + recordHash) 
+        .addTable([
+            ['Project Name', projectName],
+            ['Code Id', code_id[0]],
+            ['Signer Address', cube_wallet.key.accAddress],
+            ['Store Tx hash', `[${storeHash}](#https://explorer.xpla.io/testnet/tx/${storeHash})`],
+            ['Record Tx hash', `[${recordHash}](#https://explorer.xpla.io/testnet/tx/${recordHash})`]
+          ])
         .write()
 }
 

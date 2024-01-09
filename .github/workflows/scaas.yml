@@ -102,16 +102,3 @@ jobs:
         run: |
           npm ci
           npm run query -- ${{ needs.validate-project-structure-job.outputs.project_name }} "${{vars.RECORD_CONTRACT_ADDRESS}}"
-
-  result-job:
-    name: Result
-    runs-on: ubuntu-latest
-    steps:
-      - name: Adding markdown
-        run: echo ''
-  # result
-  # - project name
-  # - code_id
-  # - store contract address
-  # - signer address
-  # - store tx hash

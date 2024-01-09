@@ -1,6 +1,7 @@
 import { isTxError, LCDClient, MnemonicKey, MsgExecuteContract, MsgStoreCode } from "@xpla/xpla.js";
 import * as fs from 'fs'
 import * as path from 'path'
+import * as core from '@actions/core';
 
 // github evn로 처리
 const cube = new LCDClient({
@@ -16,39 +17,35 @@ const store = async () => {
     const adminMnemonic = process.argv[4]
     const wasmPath = projectName + ".wasm"
 
-    console.log(projectName)
-    console.log(wasmPath)
-    console.log(adminMnemonic)
-
-    const cube_wallet01 = cube.wallet(new MnemonicKey({mnemonic: adminMnemonic}))
+    const cube_wallet = cube.wallet(new MnemonicKey({mnemonic: adminMnemonic}))
 
     const storeCode = new MsgStoreCode(
-        cube_wallet01.key.accAddress,
+        cube_wallet.key.accAddress,
         fs.readFileSync(path.resolve(__dirname, wasmPath), 'base64')
     )
 
-    const storeCodeTx = await cube_wallet01.createAndSignTx({
+    const storeCodeTx = await cube_wallet.createAndSignTx({
         msgs: [storeCode],
     });
 
-    const storeCodeTxResult = await cube.tx.broadcast(storeCodeTx);
+    const storeTxResult = await cube.tx.broadcast(storeCodeTx);
 
-    console.log(storeCodeTxResult);
+    console.log(storeTxResult);
 
-    if (isTxError(storeCodeTxResult)) {
+    if (isTxError(storeTxResult)) {
         throw new Error(
-            `store code failed. code: ${storeCodeTxResult.code}, codespace: ${storeCodeTxResult.codespace}, raw_log: ${storeCodeTxResult.raw_log}`
+            `store code failed. code: ${storeTxResult.code}, codespace: ${storeTxResult.codespace}, raw_log: ${storeTxResult.raw_log}`
         );
     }
 
     const {
         store_code: { code_id },
-    } = storeCodeTxResult.logs[0].eventsByType;
+    } = storeTxResult.logs[0].eventsByType;
 
     console.log(code_id)
 
     const testExec = new MsgExecuteContract(
-        cube_wallet01.key.accAddress,
+        cube_wallet.key.accAddress,
         recordContractAddress,
         {
             "store_cosmwasm_project": {
@@ -62,13 +59,27 @@ const store = async () => {
 
     console.log(code_id[0])
 
-    const tx = await cube_wallet01.createAndSignTx({
+    const tx = await cube_wallet.createAndSignTx({
         msgs: [testExec],
     });
 
-    const result = await cube.tx.broadcast(tx);
+    const recordTxResult = await cube.tx.broadcast(tx);
 
-    console.log(result);
+    console.log(recordTxResult);
+
+    const storeHash = storeTxResult.txhash
+    const recordHash = recordTxResult.txhash
+
+    await core.summary
+        .addHeading('Results')
+        .addRaw('Project Name: ' + projectName, true)
+        .addRaw('Code Id: ' + code_id[0], true)
+        .addRaw('Signer Address: ' + cube_wallet.key.accAddress , true)
+        .addRaw('Store Tx hash: ' + storeHash, true)
+        .addLink('Explore storing transaction!', 'https://explorer.xpla.io/testnet/' + storeHash)
+        .addRaw('Record Tx hash: ' + recordHash, true)
+        .addLink('Explore recording transaction!', 'https://explorer.xpla.io/testnet/' + recordHash) 
+        .write()
 }
 
 store();

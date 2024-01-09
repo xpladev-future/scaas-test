@@ -17,7 +17,7 @@ const store = async () => {
     const adminMnemonic = process.argv[4]
     const wasmPath = projectName + ".wasm"
 
-    const cube_wallet = cube.wallet(new MnemonicKey({ mnemonic: adminMnemonic }))
+    const cube_wallet = cube.wallet(new MnemonicKey({mnemonic: adminMnemonic}))
 
     const storeCode = new MsgStoreCode(
         cube_wallet.key.accAddress,
@@ -50,10 +50,10 @@ const store = async () => {
         {
             "store_cosmwasm_project": {
                 "info": {
-                    "project_name": projectName,
+                    "project_name": projectName, 
                     "code_id": code_id[0].toString()
-                }
-            }
+                } 
+           }
         }
     );
 
@@ -75,10 +75,10 @@ const store = async () => {
         .addTable([
             ['Project Name', projectName],
             ['Code Id', code_id[0]],
-            ['Signer Address', cube_wallet.key.accAddress],
-            ['Store Tx hash', core.summary.addLink(storeHash, `https://explorer.xpla.io/testnet/tx/${storeHash}`)],
-            ['Record Tx hash', core.summary.addLink(recordHash, `https://explorer.xpla.io/testnet/tx/${recordHash}`)]
-        ])
+            ['Signer Address', `<a href="https://explorer.xpla.io/testnet/address/${cube_wallet.key.accAddress}">${cube_wallet.key.accAddress}</a>`],
+            ['Store Tx hash', `<a href="https://explorer.xpla.io/testnet/tx/${storeHash}">${storeHash}</a>`],
+            ['Record Tx hash', `<a href="https://explorer.xpla.io/testnet/tx/${recordHash}">${recordHash}</a>`],
+          ])
         .write()
 }
 

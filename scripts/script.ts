@@ -1,4 +1,4 @@
-import { isTxError, LCDClient, MnemonicKey, MsgExecuteContract, MsgStoreCode } from "@xpla/xpla.js";
+import { isTxError, LCDClient, MnemonicKey, MsgExecuteContract, MsgStoreCode, Wallet } from "@xpla/xpla.js";
 import * as fs from 'fs'
 import * as path from 'path'
 import * as core from '@actions/core';
@@ -10,64 +10,81 @@ const cube = new LCDClient({
 })
 
 const script = async () => {
-
   const projectName = process.argv[2]
   const recordContractAddress = process.argv[3]
   const adminMnemonic = process.argv[4]
   const wasmPath = projectName + ".wasm"
 
-  const cube_wallet = cube.wallet(new MnemonicKey({ mnemonic: adminMnemonic }))
+  const signerWallet = cube.wallet(new MnemonicKey({ mnemonic: adminMnemonic }))
 
+  const storeTxResult = await storeWasm(signerWallet, wasmPath)
+  const codeId = getCodeId(storeTxResult)
+  console.log(storeTxResult)
+
+  const recordTxResult = await recordCodeId(signerWallet, recordContractAddress, projectName, codeId)
+  console.log(recordTxResult)
+
+  await checkCodeId(recordContractAddress, projectName, codeId)
+  await writeSummary(projectName, codeId, signerWallet.key.accAddress, storeTxResult.txhash, recordTxResult.txhash)
+}
+
+const getCodeId = (storeTxResult) => {
+  const {
+    store_code: { code_id },
+  } = storeTxResult.logs[0].eventsByType
+
+  console.log(code_id)
+  return code_id[0]
+}
+
+const storeWasm = async (wallet: Wallet, wasmPath: string) => {
   const storeCode = new MsgStoreCode(
-    cube_wallet.key.accAddress,
+    wallet.key.accAddress,
     fs.readFileSync(path.resolve(__dirname, wasmPath), 'base64')
   )
 
-  const storeCodeTx = await cube_wallet.createAndSignTx({
+  const storeCodeTx = await wallet.createAndSignTx({
     msgs: [storeCode],
   });
 
-  const storeTxResult = await cube.tx.broadcast(storeCodeTx);
-
-  console.log(storeTxResult);
+  const storeTxResult = await cube.tx.broadcast(storeCodeTx)
 
   if (isTxError(storeTxResult)) {
     throw new Error(
-      `store code failed. code: ${storeTxResult.code}, codespace: ${storeTxResult.codespace}, raw_log: ${storeTxResult.raw_log}`
+      `store wasm failed. code: ${storeTxResult.code}, codespace: ${storeTxResult.codespace}, raw_log: ${storeTxResult.raw_log}`
     );
   }
 
-  const {
-    store_code: { code_id },
-  } = storeTxResult.logs[0].eventsByType;
+  return storeTxResult
+}
 
-  console.log(code_id)
-
+const recordCodeId = async (wallet: Wallet, recordContractAddress: string, projectName: string, codeId: string) => {
   const testExec = new MsgExecuteContract(
-    cube_wallet.key.accAddress,
+    wallet.key.accAddress,
     recordContractAddress,
     {
       "store_cosmwasm_project": {
         "info": {
           "project_name": projectName,
-          "code_id": code_id[0].toString()
+          "code_id": codeId
         }
       }
     }
   );
 
-  console.log(code_id[0])
-
-  const tx = await cube_wallet.createAndSignTx({
+  const tx = await wallet.createAndSignTx({
     msgs: [testExec],
   });
 
   const recordTxResult = await cube.tx.broadcast(tx);
 
-  console.log(recordTxResult);
+  if (isTxError(recordTxResult)) {
+    throw new Error(
+      `record codeId failed. code: ${recordTxResult.code}, codespace: ${recordTxResult.codespace}, raw_log: ${recordTxResult.raw_log}`
+    );
+  }
 
-  await checkCodeId(recordContractAddress, projectName, code_id[0])
-  await writeSummary(projectName, code_id[0], cube_wallet.key.accAddress, storeTxResult.txhash, recordTxResult.txhash)
+  return recordTxResult
 }
 
 const checkCodeId = async (recordContractAddress: string, projectName: string, codeId: string) => {

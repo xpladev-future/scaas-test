@@ -1,0 +1,68 @@
+name: Check cosmwasm project workflow
+
+on:
+  pull_request:
+    branches: ['register']
+    types: [ opened, synchronize ]
+
+jobs:
+  check-valid-project-structure-job:
+    name: Check valid project structure
+    runs-on: ubuntu-latest
+    # Map a step output to a job output
+    outputs:
+      project_path: ${{ steps.check.outputs.project_path }}
+      project_name: ${{ steps.check.outputs.project_name }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: technote-space/get-diff-action@v6
+        with:
+          SET_ENV_NAME_COUNT: diff_count
+          PATTERNS: |
+            projects/cosmwasm/**
+      - name: check number of project
+        id: check
+        run: |
+          IFS=' ' read -r -a diff_files <<< "${{ env.GIT_DIFF }}"
+          tail="${diff_files[0]#*/*/*/}"
+          head="${diff_files[0]%$tail}"
+          project_path="${head:1}"
+          if [[ $project_path != projects/cosmwasm/* ]]
+          then
+            echo "Cosmwasm Project must be registered in projects/cosmwasm/"
+            exit 1
+          fi
+          for i in ${{ env.GIT_DIFF }}
+          do
+            if [[ $i != $project_path* ]]
+            then
+              echo "Only one project can be registered!"
+              exit 1
+            fi
+          done
+          diff_project_name="${project_path#*/*/}"
+          project_name="${diff_project_name%?}"
+          echo "project_name=$project_name" >> $GITHUB_OUTPUT
+          echo "project_path=$project_path" >> $GITHUB_OUTPUT
+
+  check-compile-cosmwasm-job:
+    name: Check compile cosmwasm contract
+    needs: check-valid-project-structure-job
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+      - name: cargo build
+        id: wasm_compile
+        working-directory: ${{ needs.check-valid-project-structure-job.outputs.project_path }}
+        run: |
+          rustup target add wasm32-unknown-unknown
+          cargo build --release --target wasm32-unknown-unknown
+          if [ -f target/wasm32-unknown-unknown/release/${{ needs.check-valid-project-structure-job.outputs.project_name }}.wasm ]; then
+            echo 'wasm compile success!'
+          else
+            echo 'wasm compile failed!'
+            exit 1
+          fi

@@ -1,12 +1,13 @@
 name: Cosmwasm contract auto compile & deploy workflow
 
 on:
-  workflow_dispatch:
   pull_request:
-    types: [ opened, synchronize ]
+    branches: ['register']
+    types: ['closed']
 
 jobs:
   validate-project-structure-job:
+    if: github.event.pull_request.merged == true
     name: Validate project structure
     runs-on: ubuntu-latest
     # Map a step output to a job output
@@ -68,8 +69,8 @@ jobs:
           name: ${{ needs.validate-project-structure-job.outputs.project_name }}
           path: ${{ needs.validate-project-structure-job.outputs.project_path }}${{ steps.wasm_compile.outputs.wasm_path }}
       
-  store-wasm-job:
-    name: Store wasm to xpla chain
+  store-and-record-wasm-job:
+    name: Store and record wasm to xpla chain
     needs: [validate-project-structure-job, compile-cosmwasm-job]
     runs-on: ubuntu-latest
     steps:
@@ -77,27 +78,12 @@ jobs:
       - uses: actions/download-artifact@v3
         with:
           name: ${{ needs.validate-project-structure-job.outputs.project_name }}
-          path: ts-test
+          path: scripts
       - uses: actions/setup-node@v3
         with:
           node-version: 16.14.2
       - name: store tx broadcasting
-        working-directory: ts-test
+        working-directory: scripts
         run: |
           npm ci
-          npm run store -- ${{ needs.validate-project-structure-job.outputs.project_name }} ${{vars.RECORD_CONTRACT_ADDRESS}} "${{secrets.TEST_MNEMONIC}}"
-
-  query-code-id-job:
-    name: Query stored code id
-    needs: [validate-project-structure-job, store-wasm-job]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v3
-        with:
-          node-version: 16.14.2
-      - name: query code
-        working-directory: ts-test
-        run: |
-          npm ci
-          npm run query -- ${{ needs.validate-project-structure-job.outputs.project_name }} ${{vars.RECORD_CONTRACT_ADDRESS}}
+          npm run script -- ${{ needs.validate-project-structure-job.outputs.project_name }} "${{vars.RECORD_CONTRACT_ADDRESS}}" "${{secrets.TEST_MNEMONIC}}"

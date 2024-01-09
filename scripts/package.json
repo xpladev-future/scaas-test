@@ -4,8 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "store": "ts-node store.ts",
-    "query": "ts-node query.ts",
+    "script": "ts-node script.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",

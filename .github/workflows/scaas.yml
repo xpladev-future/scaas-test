@@ -82,7 +82,7 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: 16.14.2
-      - name: store tx broadcasting
+      - name: run script(store and record wasm)
         working-directory: scripts
         run: |
           npm ci
